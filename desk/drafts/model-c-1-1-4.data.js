@@ -1,0 +1,1 @@
+window.DeskData.define("desk/drafts/model-c-1-1-4.json",{"text":"Proposed resolution\n\n“Resolved that Mr./Ms. ________________ who retires by rotation at the Annual General Meeting be and is hereby reappointed as a Director of the company.”\n\nMinutes\n\nProposed by______ seconded by_______ Resolution passed unanimously/ by majority / rejected."});

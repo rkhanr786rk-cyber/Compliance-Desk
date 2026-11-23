@@ -1,0 +1,1 @@
+window.DeskData.define("desk/drafts/model-a-1-1-4.json",{"text":"Proposal\n\nThe Board to consider any other item with the permission of the Chair\n\nMinutes\n\nThere being no other item for discussion the meeting ended with a vote of thanks to the Chair."});

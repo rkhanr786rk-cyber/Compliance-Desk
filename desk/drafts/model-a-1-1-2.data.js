@@ -1,0 +1,1 @@
+window.DeskData.define("desk/drafts/model-a-1-1-2.json",{"text":"Proposal\n\nThe Chairman to confirm the quorum and call the meeting to order.\n\nMinutes\n\nMr/Ms.____________ took chair and confirmed the presence of quorum and called the meeting to order."});

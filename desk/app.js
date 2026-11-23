@@ -72,6 +72,7 @@
     const started=Object.entries(state.matters).flatMap(([id,ms])=>Object.entries(ms).map(([name,steps])=>({flow:findFlow(id),name,steps:Object.values(steps).filter(Boolean).length}))).filter(r=>r.flow&&r.steps>0&&r.steps<(r.flow.steps.length+(r.flow.checks?.length||0)));
     const featured=['board-meeting','appoint-director','director-interests','annual-general-meeting'].map(findFlow).filter(Boolean);
     page.innerHTML=`<section class="hero"><img class="hero-art" src="desk/engraving.webp" alt=""><div class="hero-copy"><div class="eyebrow">Company secretary workspace</div><h1>Practice desk</h1><p>Read the law, follow a procedure, and prepare the documents for your next filing.</p><button type="button" class="hero-search" data-search>${icon('search')}Search your desk…<kbd>Ctrl K</kbd></button></div></section>
+    <section class="daily-start"><div><div class="kicker">Client workspace</div><h2>Board Meeting Pack</h2><p>Prepare the notice, agenda, attendance sheet, minutes and resolution extract from one matter.</p></div><div class="work-actions"><a class="btn primary" href="#new/board-meeting">Start a meeting pack</a><a class="btn" href="#today">Open Today</a></div></section>
     <section class="section"><div class="section-head"><h2>Reference library</h2></div><div class="reference-grid">${Object.entries(volumes).map(([k,v])=>{const records=lib.filter(r=>r.kind===k);const meta=k==='rule'?`${format(new Set(records.map(r=>r.group)).size)} rule sets`:k==='lodr'?`${format(records.length)} regulations & schedules`:`${format(records.filter(r=>!r.number.startsWith('Schedule')).length)} sections · ${records.filter(r=>r.number.startsWith('Schedule')).length} schedules`;return `<a class="volume ${k}" href="#library/${k}"><span class="vol-icon">${icon(v.icon)}</span><h3>${v.title}</h3><p>${meta}</p></a>`;}).join('')}</div></section>
     ${started.length?`<section class="section"><div class="section-head"><h2>Work in progress</h2></div><div class="procedure-list">${started.slice(0,5).map(s=>`<a class="proc-row" href="${procHref(s.flow)}/${slug(s.name)}"><span class="item-icon">${icon('checklist')}</span><div class="row-main"><div class="row-title">${html(s.flow.title)}</div><div class="row-meta">${html(s.name)}</div></div><span class="chip">${s.steps} of ${s.flow.steps.length+(s.flow.checks?.length||0)}</span>${right()}</a>`).join('')}</div></section>`:''}
     <section class="section"><div class="section-head"><h2>Common procedures</h2><a class="section-link" href="#procedures">View all procedures</a></div><div class="procedure-list">${(featured.length?featured:flows.slice(0,4)).map(p=>flowRow(p)).join('')}</div></section>
@@ -91,13 +92,16 @@
   const relatedLink=(id,label)=>{const x=catalog.get(id);return x?`<a href="${lawHref(x)}">${html(ref(x))} · ${html(x.title)}<small>${html(label||x.group)}</small></a>`:'';};
   function procedureLinks(ps){return ps.map(p=>`<a href="${procHref(p)}">${html(p.title)}<small>${p.steps.length} checklist steps</small></a>`).join('');}
   function templateLinks(ds){return ds.map(d=>`<a href="${docHref(d)}">${html(d.code||d.kind)} · ${html(d.title)}</a>`).join('');}
-  async function reader(id,serial){
+  async function readBody(r){
+    if(!bodies.has(r.part))bodies.set(r.part,localJSON('desk/library/'+encodeURIComponent(r.part)).catch(e=>{bodies.delete(r.part);throw e;}));
+    const chunk=await bodies.get(r.part);return chunk[r.id];
+  }
+  async function reader(id,serial,focusNote){
     const r=catalog.get(id);if(!r)return missing();
     nav(r.kind);crumb([[volumes[r.kind].short,'#library/'+r.kind]],ref(r));document.title=ref(r)+' · '+r.title+' · Compliance Desk';
     page.innerHTML=header(volumes[r.kind].title,ref(r)+' · '+r.title,r.group)+'<p class="load-text">Opening provision…</p>';
-    if(!bodies.has(r.part))bodies.set(r.part,localJSON('desk/library/'+encodeURIComponent(r.part)).catch(e=>{bodies.delete(r.part);throw e;}));
-    const chunk=await bodies.get(r.part);if(serial!==routeNo)return;
-    const body=chunk[r.id];if(!body)throw new Error('Missing provision');
+    const body=await readBody(r);if(serial!==routeNo)return;
+    if(!body)throw new Error('Missing provision');
     const links=body.related||[];
     const related=['rule','lodr','act'].map(kind=>{
       const group=links.filter(x=>x.kind===kind).sort((a,b)=>Number(b.label.startsWith('Companion'))-Number(a.label.startsWith('Companion')));
@@ -111,6 +115,11 @@
     const paging=[[neighbours[pos-1],'Previous'],[neighbours[pos+1],'Next']].filter(([x])=>x).map(([x,side])=>`<a href="${lawHref(x)}"><small>${side}</small>${html(ref(x))} · ${html(x.title)}</a>`).join('');
     page.innerHTML=header(volumes[r.kind].title,ref(r)+' · '+r.title,r.group)+`<div class="detail-layout"><section class="reading"><div class="reading-toolbar"><span>Edition · ${html(r.asOf)}</span><div class="size-controls"><button type="button" data-font="-1" aria-label="Decrease text size">A−</button><button type="button" data-font="1" aria-label="Increase text size">A+</button></div>${saveBtn('law:'+id)}</div>${body.note?`<div class="source-note">${html(body.note)}</div>`:''}<div class="statute" style="--reading-size:${Number(state.sizes)||1.16}">${body.paragraphs.length?body.paragraphs.map(p=>`<p class="${/^\([a-zivx]+\)/i.test(p)?'indent':''}">${html(p)}</p>`).join(''):''}</div>${body.pdf?`<div class="schedule"><h2 class="panel-title">Schedule pages</h2><object type="application/pdf" data="${html(body.pdf)}" aria-label="${html(ref(r))}"><p>Your browser can open the complete schedule below.</p></object><a class="btn" href="${html(body.pdf)}">Read ${html(ref(r))} in full</a></div>`:''}<nav class="provision-paging" aria-label="Neighbouring provisions">${paging}</nav></section><aside>
     ${sidePanel('Linked provisions',related||'<p>No linked provisions are indexed for this entry.</p>')}${ps.length?sidePanel('Related procedures',procedureLinks(ps)):''}${ds.length?sidePanel('Document templates',templateLinks(ds)):''}</aside></div>`;
+    window.DeskReaderTools.attach({page,r,body,catalog,read:readBody,ref,html,state,persist,focusNote});
+    if(focusNote==='history'){
+      const history=page.querySelector('.law-editions'),comparison=page.querySelector('.edition-compare');
+      history.open=true;if(comparison)comparison.open=true;
+    }
   }
   function procedures(){
     nav('procedures');crumb([['Workspace','#overview']],'Procedure library');document.title='Procedure library · Compliance Desk';
@@ -131,7 +140,7 @@
     const steps=[...p.steps,...(p.checks||[]).map(title=>({title,final:true}))];
     function show(){
       const selected=state.matters[id]?.[matter]||{},checked=steps.reduce((n,s,i)=>n+Number(Boolean(selected[i])),0);
-      page.innerHTML=header(p.category,p.title,p.summary)+`<div class="detail-layout"><section class="panel"><div class="between"><h2>Working checklist</h2>${saveBtn('flow:'+id)}</div><div class="matter-bar"><label for="matter">Matter</label><select id="matter">${[...new Set([defaultMatter,...Object.keys(state.matters[id]||{})])].map(n=>`<option ${n===matter?'selected':''}>${html(n)}</option>`).join('')}</select><button class="btn" id="add-matter">${icon('plus')} New matter</button></div><form id="new-matter" class="matter-bar" hidden><label for="matter-name">Matter name</label><input class="field-control" id="matter-name" maxlength="80" required placeholder="Company or matter name"><button class="btn primary">Create</button><button type="button" class="btn" id="cancel-matter">Cancel</button></form><div class="meta"><span id="completed">${checked}</span> of ${steps.length} complete · Saved in this browser</div><div class="progress"><span id="progress-bar" style="width:${100*checked/steps.length}%"></span></div>
+      page.innerHTML=header(p.category,p.title,p.summary)+`<div class="work-actions"><a class="btn primary" href="#new/${slug(id)}">${id==='board-meeting'?'Start a Board Meeting Pack':'Start a client matter'}</a><a class="btn" href="#today">Open matter register</a></div><div class="detail-layout"><section class="panel"><div class="between"><h2>Working checklist</h2>${saveBtn('flow:'+id)}</div><div class="matter-bar"><label for="matter">Matter</label><select id="matter">${[...new Set([defaultMatter,...Object.keys(state.matters[id]||{})])].map(n=>`<option ${n===matter?'selected':''}>${html(n)}</option>`).join('')}</select><button class="btn" id="add-matter">${icon('plus')} New checklist</button></div><form id="new-matter" class="matter-bar" hidden><label for="matter-name">Matter name</label><input class="field-control" id="matter-name" maxlength="80" required placeholder="Company or matter name"><button class="btn primary">Create</button><button type="button" class="btn" id="cancel-matter">Cancel</button></form><div class="meta"><span id="completed">${checked}</span> of ${steps.length} complete · Saved in this browser</div><div class="progress"><span id="progress-bar" style="width:${100*checked/steps.length}%"></span></div>
       ${steps.map((s,i)=>`${i===p.steps.length?'<h2 class="completion-title">Completion checks</h2>':''}<label class="step"><input type="checkbox" data-step="${i}" ${selected[i]?'checked':''}><span><strong>${html(s.title)}</strong>${s.detail?`<p>${html(s.detail)}</p>`:''}</span></label>`).join('')}</section><aside>
       ${sidePanel('Applicability',`<p>${html(p.scope)}</p>`)}
       ${p.materials?.length?sidePanel('Records to obtain',p.materials.map(m=>`<details class="material"><summary>${html(m.title)}</summary><p>${html(m.detail)}</p></details>`).join('')):''}
@@ -152,7 +161,7 @@
     if(id){const d=templates.find(x=>x.id===id);if(!d)return missing();crumb([['Document studio','#documents']],d.code||d.title);document.title=d.title+' · Compliance Desk';page.innerHTML=`<div class="detail-actions" style="justify-content:flex-end;margin:0 0 .5rem">${saveBtn('doc:'+id)}</div><div id="doc-host"></div>`;window.DeskForms.render($('#doc-host'),id);return;}
     crumb([['Workspace','#overview']],'Document studio');document.title='Document studio · Compliance Desk';
     const groups=[...new Set(templates.map(d=>d.collection||'Featured'))];
-    page.innerHTML=header('Workspace','Document studio','Prepare Word documents, edit a precedent or assemble the details for a statutory filing.')+`<div class="tool-row">${filterInput('Find a form, resolution or precedent…')}<select id="doc-group" aria-label="Document collection"><option value="">All collections</option>${groups.map(g=>'<option>'+html(g)+'</option>').join('')}</select></div><div id="doc-list" aria-live="polite"></div>`;
+    page.innerHTML=header('Workspace','Document studio','Prepare Word documents, edit a precedent or assemble the details for a statutory filing.')+`<div class="work-actions"><a class="btn primary" href="#new/board-meeting">Start a Board Meeting Pack</a></div><div class="tool-row">${filterInput('Find a form, resolution or precedent…')}<select id="doc-group" aria-label="Document collection"><option value="">All collections</option>${groups.map(g=>'<option>'+html(g)+'</option>').join('')}</select></div><div id="doc-list" aria-live="polite"></div>`;
     let limit=30;
     function list(){
       const q=$('#filter').value,g=$('#doc-group').value;
@@ -182,14 +191,22 @@
   }
   function saved(){
     nav('saved');crumb([['Workspace','#overview']],'Saved items');document.title='Saved items · Compliance Desk';
+    const notes=Object.values(state.readerNotes||{}).filter(n=>catalog.has(n.id));
     const saved=Object.keys(state.saved).map(id=>searchable.find(s=>s.key===id)).filter(Boolean);
-    page.innerHTML=header('Personal','Saved items','Your bookmarked provisions, procedures and documents are available in this browser.')+(saved.length?`<div class="list-panel">${saved.map(x=>`<div class="saved-row"><a class="item-list-link" href="${html(x.href)}"><span class="item-icon">${icon(x.icon)}</span><span class="row-main"><span class="row-title">${html(x.title)}</span><br><span class="row-meta">${html(x.meta)}</span></span></a><button class="iconbtn" aria-label="Remove ${html(x.title)} from saved items" data-save="${html(x.key)}">${icon('x')}</button></div>`).join('')}</div>`:empty('Your saved shelf is empty','Open a provision, procedure or document and choose Save to keep it here.'));
+    page.innerHTML=header('Personal','Saved items','Your bookmarked provisions, procedures and documents are available in this browser.')+(saved.length?`<div class="list-panel">${saved.map(x=>`<div class="saved-row"><a class="item-list-link" href="${html(x.href)}"><span class="item-icon">${icon(x.icon)}</span><span class="row-main"><span class="row-title">${html(x.title)}</span><br><span class="row-meta">${html(x.meta)}</span></span></a><button class="iconbtn" aria-label="Remove ${html(x.title)} from saved items" data-save="${html(x.key)}">${icon('x')}</button></div>`).join('')}</div>`:(notes.length?'':empty('Your saved shelf is empty','Open a provision, procedure or document and choose Save to keep it here.')));
+    if(notes.length)page.insertAdjacentHTML('beforeend','<section class="section"><h2>Passage notes</h2><div class="list-panel">'+notes.map(n=>'<a class="work-row" href="'+lawHref(catalog.get(n.id))+'/p'+Number(n.i)+'"><div><strong>'+html(ref(catalog.get(n.id)))+' · Passage '+(Number(n.i)+1)+'</strong><small>'+html(n.text)+'</small></div></a>').join('')+'</div></section>');
   }
   function missing(){nav('');crumb([['Workspace','#overview']],'Page unavailable');document.title='Page unavailable · Compliance Desk';page.innerHTML=empty('Page unavailable','This entry could not be found.')+'<p class="tool-row"><a class="btn" href="#overview">Return to overview</a></p>';}
   async function render(){
     const serial=++routeNo, [dest,id,matter]=routeParts();toggleMenu(false);if(dialog.open)dialog.close();window.scrollTo(0,0);
     try{
-      if(!dest||dest==='overview')home();else if(dest==='library')library(id||'act');else if(dest==='reader')await reader(id,serial);else if(dest==='procedures')id?workflow(id,matter):procedures();else if(dest==='tools')practiceTools(id);else if(dest==='materials')materials();else if(dest==='documents')documents(id);else if(dest==='saved')saved();else if(dest==='main'){history.replaceState(null,'','#overview');home();$('#main').focus();}else if(dest==='')home();else missing();
+      if(!dest||dest==='overview')home();else if(dest==='library')library(id||'act');else if(['today','companies','new','matter'].includes(dest)){
+        const desk=window.DeskMatters.context({page,flows,state,nav,crumb,header,notify,missing,current:()=>serial===routeNo,lawLabel:id=>catalog.has(id)?ref(catalog.get(id))+' · '+catalog.get(id).title:''});
+        if(dest==='today')await desk.today();else if(dest==='companies')await desk.companies(id);else if(dest==='new')await desk.create(id,matter);else await desk.matter(id,matter);
+      }else if(dest==='editions'){
+        nav('editions');crumb([['Legal references','#overview']],'Edition register');document.title='Edition register · Compliance Desk';
+        window.DeskReaderTools.register({page,catalog,flows,templates,ref,html,state,persist,header});
+      }else if(dest==='reader')await reader(id,serial,matter);else if(dest==='procedures')id?workflow(id,matter):procedures();else if(dest==='tools')practiceTools(id);else if(dest==='materials')materials();else if(dest==='documents')documents(id);else if(dest==='saved')saved();else if(dest==='main'){history.replaceState(null,'','#overview');home();$('#main').focus();}else if(dest==='')home();else missing();
     }catch(e){if(serial===routeNo){page.innerHTML=empty('This page could not be loaded','Try opening this page again.')+'<button class="btn" id="retry">Try again</button>';$('#retry').onclick=render;}console.error(e);}
   }
   function getSearch(){const q=$('#search-input').value.trim();let found;
@@ -205,7 +222,7 @@
     const b=e.target.closest('button');if(!b)return;
     if(b.hasAttribute('data-search'))openSearch();
     if(b.dataset.save){const key=b.dataset.save;if(state.saved[key])delete state.saved[key];else state.saved[key]=true;persist();if(activeNav==='saved')saved();else {const wrap=document.createElement('div');wrap.innerHTML=saveBtn(key);const next=wrap.firstElementChild;b.replaceWith(next);next.focus();}}
-    if(b.dataset.font){const val=Math.round(((Number(state.sizes)||1.16)+Number(b.dataset.font)*.1)*100)/100;state.sizes=Math.min(1.76,Math.max(.96,val));document.querySelector('.statute')?.style.setProperty('--reading-size',state.sizes);persist();}
+    if(b.dataset.font){const val=Math.round(((Number(state.sizes)||1.16)+Number(b.dataset.font)*.1)*100)/100;state.sizes=Math.min(1.76,Math.max(.96,val));document.querySelectorAll('.statute').forEach(el=>el.style.setProperty('--reading-size',state.sizes));persist();}
   });
   function searchEntry(o){o.titleSearch=word(o.title);o.index=word([o.title,o.meta,o.extra,o.exact].join(' '));o.exact=word(o.exact);searchable.push(o);}
   async function start(){
@@ -215,6 +232,7 @@
       lib.forEach(r=>{catalog.set(r.id,r);r.search=word([ref(r),r.title,r.group].join(' '));searchEntry({key:'law:'+r.id,title:ref(r)+' · '+r.title,meta:volumes[r.kind].short+' · '+r.group,href:lawHref(r),icon:volumes[r.kind].icon,exact:ref(r),extra:r.number});});
       flows.forEach(p=>searchEntry({key:'flow:'+p.id,title:p.title,meta:'Procedure · '+p.category,extra:p.summary,href:procHref(p),icon:'checklist'}));
       templates.forEach(d=>searchEntry({key:'doc:'+d.id,title:(d.code?d.code+' · ':'')+d.title,meta:d.kind,extra:d.description,exact:d.code,href:docHref(d),icon:'pen'}));
+      [['Board Meeting Pack','#new/board-meeting'],['Today & matters','#today'],['Company profiles','#companies'],['Edition register','#editions']].forEach(([title,href])=>searchEntry({key:'page:'+href,title,href,meta:'Workspace',icon:'notes'}));
       window.PracticeTools.items.forEach(t=>searchEntry({key:'tool:'+t.id,title:t.title,meta:'Practice tools',extra:t.description,href:'#tools/'+slug(t.id),icon:'archive'}));
       syncSaved();window.addEventListener('hashchange',render);await render();
     }catch(e){page.innerHTML=empty('The desk could not be opened','Reload to try loading the reference library again.')+'<button class="btn" id="retry-start">Reload desk</button>';$('#retry-start').onclick=()=>location.reload();console.error(e);}

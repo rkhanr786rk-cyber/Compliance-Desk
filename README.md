@@ -1,30 +1,21 @@
 # Compliance Desk
 
-An independent, self-contained practice website for Indian company secretaries. Extract the complete folder and open **index.html** in a current desktop browser, or serve this folder from any static web host. All runtime assets are bundled.
+A self-contained practice website for Indian company secretaries. [Open Compliance Desk](https://rkhanr786rk-cyber.github.io/Compliance-Desk/).
 
-## GitHub Pages
+## Using the client workspace
 
-The ZIP includes an independent Git repository with its own first commit. On Windows, extract the entire ZIP before opening it.
+- **Board Meeting Pack** creates editable Word drafts from shared particulars. Separate fields capture the director roster, attendance, agenda, decisions and adopted wording.
+- **Today & matters** tracks working deadlines, signatures and filings. Start a matter from any procedure. Bring earlier checklists into the register to carry over completed steps.
+- **Company profiles** supply particulars for new matters. Updating a profile leaves existing matter records as originally saved.
+- **Documents & closing file** stores supporting records and filing acknowledgements. The ZIP contains an index, checklist, notes, references, selected drafts and attached files.
+- **Edition register** lists the verified amendment comparisons and their coverage dates. The reader opens linked provisions alongside the principal text and saves notes by passage.
 
-1. In GitHub Desktop, choose **File → Add local repository** and select the extracted **Compliance-Desk** folder containing **index.html**.
-2. Choose **Publish repository**. Use **Compliance-Desk** as the name and select public visibility for public GitHub Pages hosting.
-3. In that new repository, open **Settings → Pages**. Choose **Deploy from a branch**, **main**, **/(root)**, then **Save**. GitHub displays the website address when publication completes.
+The public repository contains the application and its bundled reference materials. Client records and attachments are stored by the browser on the device used. Download closing files to retain copies. The separate Document Studio editors keep their working fields for the current tab.
 
-For an already-created, empty remote repository, you can also run these commands inside the extracted folder:
+## Reference coverage
 
-    git remote add origin https://github.com/rkhanr786rk-cyber/Compliance-Desk.git
-    git push -u origin main
+The base Companies Act text uses the 1 April 2021 edition. The LODR text uses the 15 October 2026 edition. Rule editions vary. The date reader identifies verified intervals for particular clauses and flags dates outside its coverage. Missing materials explains how to supply amendments, forms and additional practice documents.
 
-## Working with the desk
+## Hosting
 
-The site opens the Companies Act, rules and listing provisions in one reader. Use the procedure library to create a matter and tick its checks, or use the document studio to prepare local Word downloads. Bookmarks and checklist progress are saved by the browser. Document field entries last for the current tab. The Missing materials page explains what to collect to extend the collection. Signed e-filings are submitted separately in the authorised filing system.
-
-The Act text is the 1 April 2021 edition. LODR text is the 15 October 2026 edition. Rule editions vary by instrument. A legal edition has to be updated when subsequent changes apply.
-
-## Files
-
-- **index.html** and **desk/app.js** provide the shared interface and navigation.
-- **desk/library**, **desk/pages** and **desk/procedures** hold the reader, schedule pages and practice checklists.
-- **desk/forms.js** and **desk/drafts** implement drafting, Word exports and local precedent downloads.
-- **desk/tools.js** and **desk/tool-data** hold the workbooks, calendar, date calculator, filing index, duty estimates, case law and subject index.
-- **desk/fonts** includes the local font files and their licensing information.
+GitHub Pages serves the root of the main branch. Open index.html locally or serve the complete directory from a static web server. Scripts, styles, fonts and document-generation assets are bundled.

@@ -1861,7 +1861,7 @@ const catalogInput = [{"id":"model-a-1-1-1","title":"To grant leave of absence",
     };
     for (const [name, content] of Object.entries(files)) {
       const fileName = encoder.encode(name);
-      const bytes = encoder.encode(content);
+      const bytes = content instanceof Uint8Array ? content : encoder.encode(content);
       let checksum = -1;
       for (const byte of bytes) {
         checksum ^= byte;
@@ -1871,6 +1871,7 @@ const catalogInput = [{"id":"model-a-1-1-1","title":"To grant leave of absence",
       const local = header(30);
       local.long(0, 0x04034b50);
       local.short(4, 20);
+      local.short(6, 0x0800); // UTF-8 filenames.
       local.short(12, 33); // DOS date, 1 January 1980.
       local.long(14, checksum);
       local.long(18, bytes.length);
@@ -1881,6 +1882,7 @@ const catalogInput = [{"id":"model-a-1-1-1","title":"To grant leave of absence",
       entry.long(0, 0x02014b50);
       entry.short(4, 20);
       entry.short(6, 20);
+      entry.short(8, 0x0800);
       entry.short(14, 33);
       entry.long(16, checksum);
       entry.long(20, bytes.length);
@@ -2134,5 +2136,5 @@ const catalogInput = [{"id":"model-a-1-1-1","title":"To grant leave of absence",
       }
     });
   }
-  window.DeskForms = { templates, render };
+  window.DeskForms = { templates, render, exports: Object.freeze({ wordFile, packageXML }) };
 })();

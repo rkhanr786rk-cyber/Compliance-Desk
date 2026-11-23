@@ -8,9 +8,16 @@
   <meta name="description" content="A working desk for Indian company secretaries. Read linked legislation, follow procedure checklists and prepare editable documents.">
   <link rel="icon" href="desk/mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="desk/style.css">
+  <link rel="stylesheet" href="desk/workspace.css">
   <script src="desk/local-data.js" defer></script>
   <script src="desk/tools.js" defer></script>
   <script src="desk/forms.js" defer></script>
+  <script src="desk/board-documents.js" defer></script>
+  <script src="desk/matter-store.js" defer></script>
+  <script src="desk/applicability.js" defer></script>
+  <script src="desk/matters.js" defer></script>
+  <script src="desk/library/edition-records.js" defer></script>
+  <script src="desk/reader-tools.js" defer></script>
   <script src="desk/app.js" defer></script>
 </head>
 <body>
@@ -25,6 +32,8 @@
     <nav aria-label="Main navigation">
       <div class="nav-group"><h2>Workspace</h2>
         <a href="#overview" data-nav="overview"><span data-icon="grid"></span>Overview</a>
+        <a href="#today" data-nav="today"><span data-icon="calendar"></span>Today &amp; matters</a>
+        <a href="#companies" data-nav="companies"><span data-icon="users"></span>Company profiles</a>
         <a href="#procedures" data-nav="procedures"><span data-icon="checklist"></span>Procedure library</a>
         <a href="#documents" data-nav="documents"><span data-icon="pen"></span>Document studio</a>
         <a href="#tools" data-nav="tools"><span data-icon="archive"></span>Practice tools</a>
@@ -32,6 +41,7 @@
       <div class="nav-group"><h2>Legal references</h2>
         <a href="#library/act" data-nav="act"><span data-icon="book"></span>Companies Act</a>
         <a href="#library/rule" data-nav="rule"><span data-icon="layers"></span>Companies Rules</a>
+        <a href="#editions" data-nav="editions"><span data-icon="notes"></span>Edition register</a>
         <a href="#library/lodr" data-nav="lodr"><span data-icon="columns"></span>SEBI LODR</a>
       </div>
       <div class="nav-group"><h2>Personal</h2>

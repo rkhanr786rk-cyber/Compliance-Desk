@@ -1,0 +1,29 @@
+name: Import prepared website
+on:
+  push:
+    branches: [site-import]
+    paths: [site-import.zip]
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Verify archive and commit the website on main
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '0850ad51ddeedae62b10aef53e077acaf3b98aeec39cdd3a8cd1e4aea71e8bf0  site-import.zip' | sha256sum --check
+          cp site-import.zip "$RUNNER_TEMP/site-import.zip"
+          git fetch origin main
+          git switch -c publish-site FETCH_HEAD
+          unzip -oq "$RUNNER_TEMP/site-import.zip"
+          git -c core.autocrlf=false add -- .nojekyll README.md desk index.html
+          test "$(git write-tree)" = "31921c6a4b006854869e13276829b14ef77cdc6e"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Publish Compliance Desk practice website'
+          git push origin HEAD:refs/heads/main
